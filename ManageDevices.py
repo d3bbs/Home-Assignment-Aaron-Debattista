@@ -1,6 +1,27 @@
 import sqlite3
 import ssl
 import socket
+import paramiko
+from github import Github
+import base64
+
+def check_router_config(ip_address):
+    # Create a Github instance with your token
+    g = Github("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")
+    repo = g.get_user().get_repo("Home-Assignment-Aaron-Debattista")
+    filename = f"{ip_address}.config"
+    # Try to get the file from the repository
+    try:
+        file = repo.get_contents(filename)
+        print(f"Configuration file for IP {ip_address} found in the repository.")
+        
+        # Decode the file content from base64 and print it
+        file_content = base64.b64decode(file.content).decode('utf-8')
+        print('')
+        return file_content
+    except:
+        return "No configuration file found for IP {ip_address} in the repository."
+
 
 #check_ip_address(ip_address) checks if the ip address already exists in the database
 def check_ip_address(ip_address):
@@ -50,6 +71,8 @@ def list_routers():
     #f means format
     return '\n'.join([f"\nID: {device['id']}\nRouter Name: {device['router_name']}\nIP Address: {device['ip_address']}\nUsername: {device['username']}\nPassword: {device['password']}\n" for device in devices_list])
 
+ 
+    
 #handle_request(request) handles the request sent by the client
 def handle_request(request):
     #parts split the request into two parts, the action and the data
@@ -70,6 +93,8 @@ def handle_request(request):
         return delete_router(ip_address)
     elif action == "LIST":
         return list_routers()
+    elif action=="SHOW_CONFIG":
+        return check_router_config(parts[1])
     else:
         return "Invalid request."
 

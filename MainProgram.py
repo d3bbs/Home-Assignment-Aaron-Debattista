@@ -66,7 +66,9 @@ while True:
     elif choice == "4":
         backup_time = input("Enter backup time: ")
         backup_send_request("BACKUP", [backup_time])
-        
+    elif choice == "9":
+        ip_address = input("Please enter the router IP: ")
+        dev_send_request("SHOW_CONFIG", [ip_address])
     elif choice == "13":
         break
     else:

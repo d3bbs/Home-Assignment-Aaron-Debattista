@@ -57,16 +57,26 @@ def backup_router(router):
     stdin, stdout, stderr = ssh.exec_command('show running-config')
     config = stdout.read()
     with open(f"{router['ip_address']}.config", 'w') as f:
-        f.write(config)
+        f.write(config.decode())
     ssh.close()
 
 # upload_to_github(filename) uploads the file to github
 def upload_to_github(filename):
-    g = Github("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")
-    repo = g.get_user().get_repo("<repo_name>")
+    #access token
+    g = Github("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")
+    #get the repository
+    repo = g.get_user().get_repo("Home-Assignment-Aaron-Debattista")
     with open(filename, 'r') as f:
         content = f.read()
-    repo.create_file(filename, "backup", content)
+    # Check if the file already exists in the repository
+    try:
+        print(f"Content of {filename}: {content}")
+        file = repo.get_contents(filename)
+        repo.update_file(file.path, "backup", content, file.sha)
+    # If the file does not exist, create it
+    except Github.UnknownObjectException:
+        print(f"Content of {filename}: {content}")
+        repo.create_file(filename, "backup", content)
         
 
 # run_service() runs the service
