@@ -4,7 +4,7 @@ from datetime import datetime
 import sqlite3
 from scapy.all import sniff
 import scapy.layers.netflow as NetflowDataFlowSet
-
+import socket
 
 # Create a database connection
 conn = sqlite3.connect('netflow_data.db')
@@ -28,28 +28,44 @@ cursor.execute('''
 
 # Define a callback function to process the captured NetFlow packets
 def process_packet(packet):
-    if packet.haslayer(NetflowDataFlowSet):
-        # Extract the required fields from the packet
-        date = datetime.now().strftime('%Y-%m-%d')
-        time = datetime.now().strftime('%H:%M:%S')
-        router_ip = packet[IP].src
-        num_packets = packet[IP].len
-        source_ip = packet[IP].src
-        destination_ip = packet[IP].dst
-        protocol = packet[IP].proto
-        source_port = packet[TCP].sport if TCP in packet else packet[UDP].sport
-        destination_port = packet[TCP].dport if TCP in packet else packet[UDP].dport
-
-        # Save the extracted fields to the database
-        cursor.execute('''
-            INSERT INTO netflow_data (date, time, router_ip, num_packets, source_ip, destination_ip, protocol, source_port, destination_port)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (date, time, router_ip, num_packets, source_ip, destination_ip, protocol, source_port, destination_port))
-        conn.commit()
-        print("Packet captured:", packet.summary())
+    # Get the current date and time
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M:%S")
+    # Get the router IP address
+    router_ip = packet[IP].src
+    # Get the number of packets
+    num_packets = packet[UDP].len
+    # Get the source IP address
+    source_ip = packet[IP].src
+    # Get the destination IP address
+    destination_ip = packet[IP].dst
+    # Get the protocol
+    protocol = packet[IP].proto
+    # Get the source port
+    source_port = packet[UDP].sport
+    # Get the destination port
+    destination_port = packet[UDP].dport
+    # Insert the NetFlow data into the database
+    cursor.execute('''
+        INSERT INTO netflow_data (date, time, router_ip, num_packets, source_ip, destination_ip, protocol, source_port, destination_port)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (current_date, current_time, router_ip, num_packets, source_ip, destination_ip, protocol, source_port, destination_port))
+    conn.commit()
+    # Print the NetFlow data
+    print("Date:", current_date)
+    print("Time:", current_time)
+    print("Router IP:", router_ip)
+    print("Number of Packets:", num_packets)
+    print("Source IP:", source_ip)
+    print("Destination IP:", destination_ip)
+    print("Protocol:", protocol)
+    print("Source Port:", source_port)
+    print("Destination Port:", destination_port)
+    print("")
 print("NetFlow Sniffer started.")
 # Start capturing NetFlow packets continuously on port 2055
-sniff(filter='udp and port 2055' , prn=process_packet)
+sniff(filter='udp and port 2055' , prn=process_packet, iface='virbr0',store=0)
 
 
 
