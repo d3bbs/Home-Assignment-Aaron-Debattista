@@ -5,12 +5,12 @@ import sqlite3
 from scapy.all import sniff
 import scapy.layers.netflow as NetflowDataFlowSet
 import socket
+import paramiko
 
 # Create a database connection
 conn = sqlite3.connect('netflow_data.db')
 cursor = conn.cursor()
-
-# Create a table to store the NetFlow data
+#Create a table to store the NetFlow data
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS netflow_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +23,7 @@ cursor.execute('''
         protocol TEXT,
         source_port INTEGER,
         destination_port INTEGER
-    )
+    )   
 ''')
 
 # Define a callback function to process the captured NetFlow packets
@@ -52,20 +52,11 @@ def process_packet(packet):
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (current_date, current_time, router_ip, num_packets, source_ip, destination_ip, protocol, source_port, destination_port))
     conn.commit()
-    # Print the NetFlow data
-    print("Date:", current_date)
-    print("Time:", current_time)
-    print("Router IP:", router_ip)
-    print("Number of Packets:", num_packets)
-    print("Source IP:", source_ip)
-    print("Destination IP:", destination_ip)
-    print("Protocol:", protocol)
-    print("Source Port:", source_port)
-    print("Destination Port:", destination_port)
-    print("")
-print("NetFlow Sniffer started.")
-# Start capturing NetFlow packets continuously on port 2055
-sniff(filter='udp and port 2055' , prn=process_packet, iface='virbr0',store=0)
+    # Close the connection with the client
+    
+sniff(filter="udp and port 2055", prn=process_packet, store=0)
+        
+
 
 
 

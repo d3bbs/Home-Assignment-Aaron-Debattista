@@ -11,6 +11,7 @@ def handle_request(sock):
         sock.sendall(b"Backup time set successfully.")
     else:
         sock.sendall(b"Invalid request.")
+        request = sock.recv(1024).decode('utf-8')
 
 # set_backup_time(backup_time) sets the backup time
 def set_backup_time(backup_time):
@@ -63,7 +64,7 @@ def backup_router(router):
 # upload_to_github(filename) uploads the file to github
 def upload_to_github(filename):
     #access token
-    g = Github("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")
+    g = Github("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")
     #get the repository
     repo = g.get_user().get_repo("Home-Assignment-Aaron-Debattista")
     with open(filename, 'r') as f:
@@ -89,37 +90,29 @@ def run_service():
         print(f"Connected to {addr}")
         with conn:
             handle_request(conn)
-            while True:
-                conn = sqlite3.connect('router_database.db')
-                cursor = conn.cursor()
-                print("Checking backup time...")
-                current_time = time.strftime("%H:%M")
-                current_time= str(current_time).strip()
-                print("Current time: " + current_time)
-                backup_time = get_backup_time()
-                backup_time = str(backup_time).strip()
-                print("Backup time: " + backup_time)
-                if current_time == backup_time:
-                    print("Backing up routers...")
-                    routers = list_routers()
-                    for router in routers:
-                        backup_router(router)
-                        upload_to_github(f"{router['ip_address']}.config")
-                    print("Backup complete.")
-                else:
-                    print("Backup time not reached yet.")
-                    time.sleep(60)
+    db_conn = sqlite3.connect('router_database.db')  # Move connection creation outside the loop
+    cursor = db_conn.cursor()
+    while True:
+        print("Checking backup time...")
+        current_time = time.strftime("%H:%M").strip()
+        print("Current time: " + current_time)
+        backup_time = get_backup_time().strip()
+        print("Backup time: " + backup_time)
+        if current_time == backup_time:
+            print("Backing up routers...")
+            routers = list_routers()
+            for router in routers:
+                try:
+                    backup_router(router)
+                    upload_to_github(f"{router['ip_address']}.config")
+                except Exception as e:
+                    print(f"Error backing up router {router['ip_address']}: {e}")
+            print("Backup complete.")
+        else:
+            print("Backup time not reached yet.")
+        time.sleep(60)
 
-def handle_request(sock):
-    request = sock.recv(1024).decode('utf-8')
-    print(f"Received request: {request}")
-    action, data = request.split(':', 1)
-    if action == "BACKUP":
-        set_backup_time(data)
-        response = "Backup time set successfully."
-    else:
-        response = "Invalid request."
-    sock.sendall(response.encode('utf-8'))
+
     
 if __name__ == "__main__":
     run_service()

@@ -7,7 +7,7 @@ import base64
 
 def check_router_config(ip_address):
     # Create a Github instance with your token
-    g = Github("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")
+    g = Github("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")
     repo = g.get_user().get_repo("Home-Assignment-Aaron-Debattista")
     filename = f"{ip_address}.config"
     # Try to get the file from the repository
